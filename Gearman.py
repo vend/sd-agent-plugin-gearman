@@ -1,11 +1,27 @@
-# vim: set tw=120 ts=4 sw=4 et ft=python eol :
+# vim: set tw=120 ts=4 sw=4 et eol :
+#
+# Gearman.py - A Gearman plugin for Server Density
+# Copyright 2012 Dominic Scheirlinck <dominic@vendhq.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import pprint
 import socket
 import sys
 
 class Gearman:
-    """ Gearman plugin for sd-agent
+    """ Gearman plugin for Server Density
 
         Gets information about a gearman queue. Requires python 2.6 because of
         socket.create_connection, bytearray.
@@ -23,9 +39,8 @@ class Gearman:
           - gearman_%FUNCTION_NAME%_queue - The number of this job on the
               queue
           - gearman_total_workers, gearman_total_running, gearman_total_queue:
-              totals of the above, for all functions
+              totals of the above, for all functions """
 
-        By Dominic Scheirlinck <dominic@vendhq.com> """
 
     RECV_WINDOW = 4096
     MAX_REPLY_LENGTH = 1024 * 16 # 16 KiB should be enough for anybody

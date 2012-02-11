@@ -35,3 +35,8 @@ The plugin returns a bunch of output keys:
 Unfortunately, because the names vary, these are rather hard to set up
 in seperate Server Density graphs. You might be better off using a
 single graph and just toggling them on and off.
+
+## Contact
+
+- http://github.com/vend
+- http://github.com/dominics

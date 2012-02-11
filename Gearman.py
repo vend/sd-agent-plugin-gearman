@@ -15,15 +15,25 @@ class Gearman:
          #gearman_port:    4730
          #gearman_timeout: 2
 
+        Produces a bunch of keys:
+          - gearman_%FUNCTION_NAME%_workers - The total number of workers
+              capable of running that function
+          - gearman_%FUNCTION_NAME%_running - The number of this job currently
+              being run by workers
+          - gearman_%FUNCTION_NAME%_queue - The number of this job on the
+              queue
+          - gearman_total_workers, gearman_total_running, gearman_total_queue:
+              totals of the above, for all functions
+
         By Dominic Scheirlinck <dominic@vendhq.com> """
 
     RECV_WINDOW = 4096
-    MAX_REPLY_LENGTH = 1024 * 50 # 50 KiB
+    MAX_REPLY_LENGTH = 1024 * 16 # 16 KiB should be enough for anybody
 
     default_config = {
         'gearman_server':  None, # None, not 'localhost' so we can disable in config
         'gearman_port':    4730,
-        'gearman_timeout': 10, # Let's be strict - no time to waste
+        'gearman_timeout': 5, # Let's be strict - no time to waste
     }
 
     status_columns = {
@@ -75,7 +85,6 @@ class Gearman:
             self.checksLogger.error("Gearman: Could not communicate with server: %s",
                     sys.exc_info()[0])
             return ''
-            #raise
         finally:
             s.close()
 

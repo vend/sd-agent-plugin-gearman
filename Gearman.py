@@ -91,7 +91,6 @@ class Gearman:
         except:
             self.checksLogger.error("Gearman: Could not communicate with server: %s",
                     sys.exc_info()[0])
-            raise
             return None
         finally:
             sock.close()

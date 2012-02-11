@@ -37,7 +37,7 @@ class Gearman:
     }
 
     status_columns = {
-                'total': 1,
+                'queue': 1,
                 'running': 2,
                 'workers': 3
     }.items()
@@ -47,6 +47,32 @@ class Gearman:
         self.checksLogger = checksLogger
         self.rawConfig = rawConfig
 
+    def command(self, sock, command):
+        self.checksLogger.info('Gearman: sending command: %s', command)
+        sock.sendall(command + "\n");
+
+        data = bytearray(self.MAX_REPLY_LENGTH + self.RECV_WINDOW);
+        length = 0
+        while (1):
+            nbytes = sock.recv_into(data, self.RECV_WINDOW)
+
+            if nbytes == 0:
+                self.checksLogger.error('Gearman: connection closed prematurely')
+                return ''
+
+            length = length + nbytes
+
+            if length > self.MAX_REPLY_LENGTH:
+                self.checksLogger.error('Gearman: reply too long')
+                return ''
+
+            if ".\n" in data:
+                data = data[0:data.index(".\n")]
+                self.checksLogger.info('Gearman: found end of reply')
+                break
+
+        return data
+
     def get_data(self, server):
         """ Connects to the Gearman daemon's, and uses the administrative
         protocol (http://gearman.org/?id=protocol) to request status
@@ -54,39 +80,21 @@ class Gearman:
 
         try:
             self.checksLogger.info('Gearman: connecting to %s:%d', server)
-            s = socket.create_connection(server, self.config['gearman_timeout'])
+            sock = socket.create_connection(server, self.config['gearman_timeout'])
 
-            self.checksLogger.info('Gearman: sending command')
-            s.sendall("status\n");
-
-
-            data = bytearray(self.MAX_REPLY_LENGTH + self.RECV_WINDOW);
-            length = 0
-            while (1):
-                nbytes = s.recv_into(data, self.RECV_WINDOW)
-
-                if nbytes == 0:
-                    self.checksLogger.error('Gearman: connection closed prematurely')
-                    return ''
-
-                length = length + nbytes
-
-                if length > self.MAX_REPLY_LENGTH:
-                    self.checksLogger.error('Gearman: reply too long')
-                    return ''
-
-                if ".\n" in data:
-                    data = data[0:data.index(".\n")]
-                    self.checksLogger.info('Gearman: found end of reply')
-                    break
+            data = {
+                'status': self.command(sock, 'status'),
+                'workers': self.command(sock, 'workers')
+            }
 
             self.checksLogger.info('Gearman: closing connection')
         except:
             self.checksLogger.error("Gearman: Could not communicate with server: %s",
                     sys.exc_info()[0])
-            return ''
+            raise
+            return None
         finally:
-            s.close()
+            sock.close()
 
         return data
 
@@ -96,11 +104,8 @@ class Gearman:
         if data == '':
             return dict()
 
-        status = {
-                'gearman_total_workers': 0,
-                'gearman_total_running': 0,
-                'gearman_total_queue': 0
-        }
+        status = dict([("gearman_total_" + k, 0) for (k, v) in
+            self.status_columns])
 
         data = data.split("\n")
         for function in data:
@@ -113,16 +118,35 @@ class Gearman:
 
             status = dict(status.items() + function.items())
 
-            for (key, column) in self.status_columns:
+            # total_workers can not be just summed
+            for (key, column) in {'queue': 1, 'running': 2}.items():
                 key = "gearman_total_" + key
                 status[key] = status[key] + int(values[column])
 
         return status
 
+    def count_workers(self, data):
+        data = str(data).strip()
+
+        if data == '':
+            return None
+
+        self.checksLogger.debug('Gearman: worker data: %s', data)
+        return len(data.split("\n"))
+
     def status(self):
         server = (self.config['gearman_server'], self.config['gearman_port'])
+
         data = self.get_data(server)
-        status = self.parse_status(data)
+        if not data:
+            return {}
+
+        status = self.parse_status(data['status'])
+
+        workers = self.count_workers(data['workers'])
+        if workers:
+            status['gearman_total_workers'] = workers
+
         self.checksLogger.debug('Gearman: final data: %s', status)
         return status
 

@@ -18,6 +18,7 @@ specify them.
 gearman_server:  localhost
 #gearman_port:    4730
 #gearman_timeout: 5
+```
 
 ## Output Keys
 

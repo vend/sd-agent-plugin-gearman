@@ -83,7 +83,6 @@ class Gearman:
 
             if ".\n" in data:
                 data = data[0:data.index(".\n")]
-                self.checksLogger.info('Gearman: found end of reply')
                 break
 
         return data
@@ -102,7 +101,7 @@ class Gearman:
                 'workers': self.command(sock, 'workers')
             }
 
-            self.checksLogger.info('Gearman: closing connection')
+            self.checksLogger.debug('Gearman: closing connection')
         except:
             self.checksLogger.error("Gearman: Could not communicate with server: %s",
                     sys.exc_info()[0])
@@ -145,7 +144,6 @@ class Gearman:
         if data == '':
             return None
 
-        self.checksLogger.debug('Gearman: worker data: %s', data)
         return len(data.split("\n"))
 
     def status(self):

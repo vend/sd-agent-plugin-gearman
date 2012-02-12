@@ -66,20 +66,20 @@ class Gearman:
         self.checksLogger.info('Gearman: sending command: %s', command)
         sock.sendall(command + "\n");
 
-        data = bytearray(self.MAX_REPLY_LENGTH + self.RECV_WINDOW);
+        data = bytearray(self.RECV_WINDOW);
         length = 0
         while (1):
-            nbytes = sock.recv_into(data, self.RECV_WINDOW)
+            chunk = sock.recv(self.RECV_WINDOW)
 
-            if nbytes == 0:
+            if len(chunk) == 0:
                 self.checksLogger.error('Gearman: connection closed prematurely')
                 return ''
 
-            length = length + nbytes
-
-            if length > self.MAX_REPLY_LENGTH:
+            if (len(data) + len(chunk)) > self.MAX_REPLY_LENGTH:
                 self.checksLogger.error('Gearman: reply too long')
                 return ''
+
+            data.extend(chunk)
 
             if ".\n" in data:
                 data = data[0:data.index(".\n")]

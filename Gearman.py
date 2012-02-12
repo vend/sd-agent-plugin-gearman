@@ -144,7 +144,7 @@ class Gearman:
         if data == '':
             return None
 
-        return len(data.split("\n"))
+        return len(data.split("\n")) - 1
 
     def status(self):
         server = (self.config['gearman_server'], self.config['gearman_port'])
